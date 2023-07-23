@@ -1,0 +1,121 @@
+---
+title: "TP Unidad 4"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Informe Profesionales en las distintas áreas de la ciencia
+
+Se desea realizar un análisis tomando datos del portal de información de Ciencia y Tecnología Argentino. Tiene que presentar un informe realizado en formato word.
+
+![](portal.jpg)
+
+# Consignas de trabajo
+
+Utilice el código debajo para generar el documento deseado utilizando Rmarkdown y realice las siguientes modificaciones y agregue una breve referencia en cada tabla o gráfico.
+
+ 1. Los valores de las tablas no deben tener decimales.
+
+ 2. Cambie los colores de los gráficos de forma tal que la referencia para Femenino sea azul y para Masculino verde.
+
+ 3. Cambie los nombres de las columnas a % Femenino y % Masculino respectivamente donde corresponda y centre los valores.
+
+<https://bookdown.org/yihui/rmarkdown-cookbook/kable.html>
+
+ 4. Modifique el theme que viene por defecto.
+
+ 5. Obtenga el informe en formato word y luego guardelo como pdf para entregarlo en la plataforma ( silo genera en formato pdf directamente no le será posible modificar el ´theme´)
+
+*Nota*: Los comandos debajo son orientativos, Ud puede modificarlos o usar otras librerías de R, pero debe lograr tablas y gráficos similares que contengan la misma información y las consignas antes solicitadas.
+
+# Análisis a incluir en el informe.
+
+```{r echo=TRUE}
+ library(readxl)
+base <- read_excel("base.xlsx")
+```
+
+## Tabla de proporciones de profesionales por grandes areas
+
+```{r echo=TRUE, fig.height=5, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(tibble) 
+library(knitr)
+T0.0<-xtabs(~gran_area_descripcion + sexo, base)
+table.0.0<-100*round(prop.table(T0.0,1),3)
+tabla<-as_tibble(table.0.0)
+kable(table.0.0) 
+
+```
+
+## Gráfico proporciones de profesionales por grandes areas
+
+```{r echo=TRUE, fig.height=10, fig.width=15, message=FALSE, warning=FALSE}
+library(ggplot2)
+bp<- ggplot(tabla, aes(x="", y=n, fill=sexo))+ 
+  geom_bar(width = 1, stat = "identity")+
+  facet_grid(.~gran_area_descripcion)+ ylab(" ")+ xlab(" ")+
+  theme(strip.text.x = element_text(size = 8, colour = "black", angle = 60)) 
+bp + coord_polar("y", start=0)+ theme(legend.position="top")
+```
+
+## Análisis por gran área
+
+-   CIENCIAS NATURALES Y EXACTAS
+-   INGENIERÍAS Y TECNOLOGÍAS
+-   CIENCIAS MEDICAS Y DE LA SALUD
+-   CIENCIAS AGRÍCOLAS
+-   CIENCIAS SOCIALES
+-   HUMANIDADES
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+datos<-subset(base, gran_area_descripcion=="CIENCIAS AGRÍCOLAS" & area_descripcion!="SIN DATOS" & edad>0)
+datos$area<-factor(datos$area_descripcion)
+```
+
+## Tabla: Porcentaje investigadores por sexo según disciplina
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ library(knitr)
+ T1<-xtabs(~datos$area_descripcion +sexo, datos)
+ table.1<-100*round(prop.table(T1,1),3)
+ kable(table.1,digits = 2) 
+ 
+```
+
+## Gráfico:Porcentaje investigadores por sexo según disciplina
+
+```{r echo=TRUE, fig.height=5, fig.width=10, message=FALSE, warning=FALSE}
+  library(ggplot2) 
+  proporciones<-as_tibble(table.1) 
+  names(proporciones)<-c("area","sexo", "proporcion") 
+  bp<- ggplot(proporciones, aes(x="", y=proporcion, fill=sexo))+ 
+  geom_bar(width = 1, stat = "identity")+ facet_grid(.~area)+
+  theme(strip.text.x = element_text(size = 8, colour = "black", angle = 60)) 
+  bp + coord_polar("y", start=0)+ theme(legend.position="top") 
+```
+
+## Tabla: Rangos de edad según categorías
+
+```{r echo=TRUE, fig.height=5, fig.width=10, message=FALSE, warning=FALSE}
+datos$grupo.edad<-cut(datos$edad,breaks = seq(10, 100, by = 20), 
+labels =c( "< 30]" ,"(30-50]", "(50-70]", "(70-90]" ))
+ T2<-xtabs(~area_descripcion +grupo.edad, datos)
+ table.2<-100*round(prop.table(T2,1),2)
+ kable(table.2)
+```
+
+## Gráfico: Rangos de edad según áreas
+
+```{r echo=TRUE,fig.height=5, fig.width=10,  message=FALSE, warning=FALSE}
+library(ggplot2)
+c <- ggplot(datos, aes(grupo.edad, fill=sexo)) +
+  geom_bar(aes(y = (..count..)/tapply(..count..,..PANEL..,sum)[..PANEL..]))  + facet_grid(.~area_descripcion  ) +
+theme(strip.text.x = element_text(size = 10, colour = "black", angle = 60)) + theme(axis.text.x = element_text(angle=90, vjust=1, size=10))+ theme(legend.position="top") +ggtitle("Distribución por genero") + theme(plot.title = element_text(lineheight=.8, face="bold",colour="black"))+ ylab("proporcion")
+ print(c)
+```
